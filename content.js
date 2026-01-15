@@ -451,27 +451,7 @@
 
   // Check if raw mode is already enabled
   function isRawModeEnabled() {
-    const rawOutputButton = document.querySelector('button[aria-label="Toggle viewing raw output"]');
-    if (!rawOutputButton) {
-      return null;
-    }
-
-    const ariaDescribedBy = rawOutputButton.getAttribute('aria-describedby');
-    if (!ariaDescribedBy) {
-      return null;
-    }
-
-    // Extract the last number after the last dash
-    const parts = ariaDescribedBy.split('-');
-    const lastNumber = parseInt(parts[parts.length - 1], 10);
-
-    if (isNaN(lastNumber)) {
-      return null;
-    }
-
-    // If last number is odd, raw mode is off
-    // If last number is even, raw mode is on (already rendering in markdown format)
-    return lastNumber % 2 === 0;
+    return document.body.innerHTML.includes("Show conversation with markdown formatting");
   }
 
   // Main export function
@@ -518,6 +498,13 @@
         console.log('Toggling raw output mode ON...');
         rawOutputButton.click();
         await sleep(CONFIG.ELEMENT_LOAD_DELAY * 5); // Wait for raw output to load (longer delay needed)
+
+        // Verify that raw mode was enabled successfully
+        const rawModeAfterToggle = isRawModeEnabled();
+        console.log(`Raw mode after toggle: ${rawModeAfterToggle ? 'ON' : 'OFF'}`);
+        if (!rawModeAfterToggle) {
+          throw new Error('Failed to enable raw output mode');
+        }
       } else {
         console.log('Raw output mode already ON, skipping toggle');
       }
@@ -556,7 +543,7 @@
         if (turnData) {
           if (turnData.contentType === 'image') {
             imageCounter++;
-            const imageName = turnData.image.filename;
+            const imageName = `image-${imageCounter}.jpg`;
             images.push({
               name: imageName,
               base64: turnData.image.base64
@@ -571,7 +558,7 @@
             const attachment = turnData.attachment;
             if (attachment.previewBase64) {
               imageCounter++;
-              const previewName = `attachment-preview-${imageCounter}.jpg`;
+              const previewName = `image-${imageCounter}.jpg`;
               images.push({
                 name: previewName,
                 base64: attachment.previewBase64
@@ -610,7 +597,7 @@
       const conversationTitle = titleElement ? titleElement.innerText.trim() : 'Untitled Conversation';
       const tokenSize = tokenElement ? tokenElement.innerText.trim() : 'Unknown';
 
-      let markdown = `# ${conversationTitle}\n\n`;
+      let markdown = `# **Title:** ${conversationTitle}\n\n`;
       markdown += `**Token Size:** ${tokenSize}\n\n`;
       markdown += `Exported on: ${new Date().toLocaleString()}\n\n`;
       markdown += '---\n\n';
@@ -694,6 +681,13 @@
           if (rawOutputButtonRevert) {
             rawOutputButtonRevert.click();
             await sleep(CONFIG.ELEMENT_LOAD_DELAY);
+
+            // Verify that raw mode was disabled successfully
+            const rawModeAfterRevert = isRawModeEnabled();
+            console.log(`Raw mode after revert: ${rawModeAfterRevert ? 'ON' : 'OFF'}`);
+            if (rawModeAfterRevert) {
+              console.warn('Warning: Failed to disable raw output mode');
+            }
           }
         }
       }
