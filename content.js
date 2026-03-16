@@ -20,6 +20,7 @@
   let isExporting = false;
   let shouldCancel = false;
   const ALLOWED_ACTIONS = new Set(['export', 'getStatus', 'cancel']);
+  console.log('AI Studio Exporter content script loaded');
 
   // Utility function to sleep/wait
   const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
@@ -351,47 +352,11 @@
     return reasoningText;
   }
 
-  function sanitizeSettings(rawSettings) {
-    const DEFAULT_SETTINGS = {
-      scrapeImages: true,
-      scrapeAttachments: true,
-      scrapeAttachmentPreview: true,
-      scrapeAttachmentTitle: true,
-      scrapeAttachmentSize: true,
-      scrapeReasoning: true,
-      loadDelay: 700
-    };
-
-    const sanitized = { ...DEFAULT_SETTINGS };
-
-    sanitized.scrapeImages = Boolean(rawSettings.scrapeImages);
-    sanitized.scrapeAttachments = Boolean(rawSettings.scrapeAttachments);
-    sanitized.scrapeAttachmentPreview = Boolean(rawSettings.scrapeAttachmentPreview);
-    sanitized.scrapeAttachmentTitle = Boolean(rawSettings.scrapeAttachmentTitle);
-    sanitized.scrapeAttachmentSize = Boolean(rawSettings.scrapeAttachmentSize);
-    sanitized.scrapeReasoning = Boolean(rawSettings.scrapeReasoning);
-
-    const parsedDelay = Number(rawSettings.loadDelay);
-    if (Number.isFinite(parsedDelay) && parsedDelay >= 200 && parsedDelay <= 5000) {
-      sanitized.loadDelay = Math.round(parsedDelay);
-    }
-
-    return sanitized;
-  }
-
   // Get settings from storage
   function getSettings() {
     return new Promise((resolve) => {
       chrome.storage.sync.get(
-        {
-          scrapeImages: true,
-          scrapeAttachments: true,
-          scrapeAttachmentPreview: true,
-          scrapeAttachmentTitle: true,
-          scrapeAttachmentSize: true,
-          scrapeReasoning: true,
-          loadDelay: 700
-        },
+        AI_STUDIO_DEFAULT_SETTINGS,
         (settings) => resolve(sanitizeSettings(settings))
       );
     });
@@ -741,8 +706,16 @@
 
   // Listen for messages from popup
   chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-    const isTrustedSender = !sender || !sender.id || sender.id === chrome.runtime.id;
-    if (!isTrustedSender || !request || typeof request !== 'object' || typeof request.action !== 'string') {
+    const senderUrl = sender?.url;
+    const isInternalMessage = sender?.id === chrome.runtime.id &&
+      (!senderUrl || senderUrl.startsWith(chrome.runtime.getURL('')));
+
+    if (!isInternalMessage) {
+      sendResponse?.({ success: false, message: 'Invalid sender' });
+      return false;
+    }
+
+    if (!request || typeof request !== 'object' || Array.isArray(request) || typeof request.action !== 'string') {
       sendResponse?.({ success: false, message: 'Invalid request' });
       return false;
     }
@@ -767,5 +740,4 @@
     return false;
   });
 
-  console.log('AI Studio Exporter content script loaded');
 })();

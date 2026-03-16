@@ -1,14 +1,3 @@
-// Default settings
-const DEFAULT_SETTINGS = {
-    scrapeImages: true,
-    scrapeAttachments: true,
-    scrapeAttachmentPreview: true,
-    scrapeAttachmentTitle: true,
-    scrapeAttachmentSize: true,
-    scrapeReasoning: true,
-    loadDelay: 700
-};
-
 // DOM Elements
 const elements = {
     scrapeImages: document.getElementById('scrapeImages'),
@@ -24,24 +13,6 @@ const elements = {
     statusMsg: document.getElementById('statusMsg')
 };
 
-function sanitizeSettings(raw) {
-    const sanitized = { ...DEFAULT_SETTINGS };
-
-    sanitized.scrapeImages = Boolean(raw.scrapeImages);
-    sanitized.scrapeAttachments = Boolean(raw.scrapeAttachments);
-    sanitized.scrapeAttachmentPreview = Boolean(raw.scrapeAttachmentPreview);
-    sanitized.scrapeAttachmentTitle = Boolean(raw.scrapeAttachmentTitle);
-    sanitized.scrapeAttachmentSize = Boolean(raw.scrapeAttachmentSize);
-    sanitized.scrapeReasoning = Boolean(raw.scrapeReasoning);
-
-    const parsedDelay = Number(raw.loadDelay);
-    if (Number.isFinite(parsedDelay) && parsedDelay >= 200 && parsedDelay <= 5000) {
-        sanitized.loadDelay = Math.round(parsedDelay);
-    }
-
-    return sanitized;
-}
-
 // Load settings when page loads
 document.addEventListener('DOMContentLoaded', loadSettings);
 
@@ -55,7 +26,7 @@ elements.resetBtn.addEventListener('click', resetSettings);
 elements.scrapeAttachments.addEventListener('change', toggleAttachmentOptions);
 
 function loadSettings() {
-    chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
+    chrome.storage.sync.get(AI_STUDIO_DEFAULT_SETTINGS, (settings) => {
         const safeSettings = sanitizeSettings(settings);
 
         elements.scrapeImages.checked = safeSettings.scrapeImages;
@@ -88,7 +59,7 @@ function saveSettings() {
 
 function resetSettings() {
     if (confirm('Are you sure you want to reset all settings to default?')) {
-        chrome.storage.sync.set(DEFAULT_SETTINGS, () => {
+        chrome.storage.sync.set(AI_STUDIO_DEFAULT_SETTINGS, () => {
             loadSettings();
             showStatus('Settings reset to defaults');
         });

@@ -40,6 +40,7 @@
         "https://aistudio.google.com/*"
       ],
       "js": [
+        "settings.js",
         "libs/jszip.min.js",
         "content.js"
       ],

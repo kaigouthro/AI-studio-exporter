@@ -7,21 +7,11 @@ document.addEventListener('DOMContentLoaded', async () => {
   const btnText = document.getElementById('btnText');
   const messageDiv = document.getElementById('message');
   const settingsBtn = document.getElementById('settingsBtn');
-  let lastAIStudioStatus = false;
 
   const showMessage = (type, text) => {
     messageDiv.className = `message ${type}`;
     messageDiv.textContent = text;
     messageDiv.style.display = 'block';
-  };
-
-  const isAIStudioUrl = (maybeUrl) => {
-    try {
-      const parsed = new URL(maybeUrl);
-      return parsed.hostname === 'aistudio.google.com' && parsed.pathname.includes('/prompts/');
-    } catch (error) {
-      return false;
-    }
   };
 
   // Open settings page
@@ -44,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       const isAIStudio = isAIStudioUrl(tab.url);
-      lastAIStudioStatus = isAIStudio;
 
       if (isAIStudio) {
         // Check if export is already running
@@ -125,7 +114,7 @@ document.addEventListener('DOMContentLoaded', async () => {
       }
 
       // Validate current tab before attempting export
-      if (!lastAIStudioStatus && !isAIStudioUrl(tab.url)) {
+      if (!isAIStudioUrl(tab.url)) {
         showMessage('error', '✗ Please open a prompt on aistudio.google.com before exporting');
         exportBtn.disabled = true;
         return;
