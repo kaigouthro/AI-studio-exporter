@@ -6,18 +6,32 @@ chrome.runtime.onInstalled.addListener(() => {
 
 // Handle messages from popup or content script
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-  if (request.action === 'checkTab') {
-    // Check if current tab is AI Studio
-    chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-      if (tabs[0]) {
-        const isAIStudio = tabs[0].url && tabs[0].url.includes('aistudio.google.com');
-        sendResponse({ isAIStudio: isAIStudio, url: tabs[0].url });
-      } else {
-        sendResponse({ isAIStudio: false });
-      }
-    });
-    return true; // Will respond asynchronously
+  const isTrustedSender = !sender || !sender.id || sender.id === chrome.runtime.id;
+  if (!isTrustedSender || !request || typeof request !== 'object' || request.action !== 'checkTab') {
+    sendResponse?.({ isAIStudio: false, error: 'Invalid request' });
+    return false;
   }
+
+  // Check if current tab is AI Studio
+  chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+    const [tab] = tabs;
+
+    if (!tab || !tab.url) {
+      sendResponse({ isAIStudio: false });
+      return;
+    }
+
+    try {
+      const tabUrl = new URL(tab.url);
+      const isAIStudio = tabUrl.hostname === 'aistudio.google.com';
+      sendResponse({ isAIStudio, url: tab.url });
+    } catch (error) {
+      console.warn('Unable to parse tab URL', error);
+      sendResponse({ isAIStudio: false });
+    }
+  });
+
+  return true; // Will respond asynchronously
 });
 
 console.log('AI Studio Exporter background service worker loaded');

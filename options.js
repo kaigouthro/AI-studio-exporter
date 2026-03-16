@@ -24,6 +24,24 @@ const elements = {
     statusMsg: document.getElementById('statusMsg')
 };
 
+function sanitizeSettings(raw) {
+    const sanitized = { ...DEFAULT_SETTINGS };
+
+    sanitized.scrapeImages = Boolean(raw.scrapeImages);
+    sanitized.scrapeAttachments = Boolean(raw.scrapeAttachments);
+    sanitized.scrapeAttachmentPreview = Boolean(raw.scrapeAttachmentPreview);
+    sanitized.scrapeAttachmentTitle = Boolean(raw.scrapeAttachmentTitle);
+    sanitized.scrapeAttachmentSize = Boolean(raw.scrapeAttachmentSize);
+    sanitized.scrapeReasoning = Boolean(raw.scrapeReasoning);
+
+    const parsedDelay = Number(raw.loadDelay);
+    if (Number.isFinite(parsedDelay) && parsedDelay >= 200 && parsedDelay <= 5000) {
+        sanitized.loadDelay = Math.round(parsedDelay);
+    }
+
+    return sanitized;
+}
+
 // Load settings when page loads
 document.addEventListener('DOMContentLoaded', loadSettings);
 
@@ -38,28 +56,30 @@ elements.scrapeAttachments.addEventListener('change', toggleAttachmentOptions);
 
 function loadSettings() {
     chrome.storage.sync.get(DEFAULT_SETTINGS, (settings) => {
-        elements.scrapeImages.checked = settings.scrapeImages;
-        elements.scrapeAttachments.checked = settings.scrapeAttachments;
-        elements.scrapeAttachmentPreview.checked = settings.scrapeAttachmentPreview;
-        elements.scrapeAttachmentTitle.checked = settings.scrapeAttachmentTitle;
-        elements.scrapeAttachmentSize.checked = settings.scrapeAttachmentSize;
-        elements.scrapeReasoning.checked = settings.scrapeReasoning;
-        elements.loadDelay.value = settings.loadDelay;
+        const safeSettings = sanitizeSettings(settings);
+
+        elements.scrapeImages.checked = safeSettings.scrapeImages;
+        elements.scrapeAttachments.checked = safeSettings.scrapeAttachments;
+        elements.scrapeAttachmentPreview.checked = safeSettings.scrapeAttachmentPreview;
+        elements.scrapeAttachmentTitle.checked = safeSettings.scrapeAttachmentTitle;
+        elements.scrapeAttachmentSize.checked = safeSettings.scrapeAttachmentSize;
+        elements.scrapeReasoning.checked = safeSettings.scrapeReasoning;
+        elements.loadDelay.value = safeSettings.loadDelay;
 
         toggleAttachmentOptions();
     });
 }
 
 function saveSettings() {
-    const settings = {
+    const settings = sanitizeSettings({
         scrapeImages: elements.scrapeImages.checked,
         scrapeAttachments: elements.scrapeAttachments.checked,
         scrapeAttachmentPreview: elements.scrapeAttachmentPreview.checked,
         scrapeAttachmentTitle: elements.scrapeAttachmentTitle.checked,
         scrapeAttachmentSize: elements.scrapeAttachmentSize.checked,
         scrapeReasoning: elements.scrapeReasoning.checked,
-        loadDelay: parseInt(elements.loadDelay.value, 10) || 700
-    };
+        loadDelay: elements.loadDelay.value
+    });
 
     chrome.storage.sync.set(settings, () => {
         showStatus('Settings saved successfully');
