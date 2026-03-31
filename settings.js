@@ -34,7 +34,7 @@ function isAIStudioUrl(maybeUrl) {
     const parsed = new URL(maybeUrl);
     return parsed.protocol === 'https:' &&
       parsed.hostname === 'aistudio.google.com' &&
-      parsed.pathname.startsWith('/prompts/');
+      /^\/(?:u\/\d+\/)?prompts\//.test(parsed.pathname);
   } catch (error) {
     return false;
   }
