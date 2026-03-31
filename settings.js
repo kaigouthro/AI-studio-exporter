@@ -32,7 +32,9 @@ function sanitizeSettings(raw = {}) {
 function isAIStudioUrl(maybeUrl) {
   try {
     const parsed = new URL(maybeUrl);
-    return parsed.hostname === 'aistudio.google.com' && parsed.pathname.startsWith('/prompts/');
+    return parsed.protocol === 'https:' &&
+      parsed.hostname === 'aistudio.google.com' &&
+      parsed.pathname.startsWith('/prompts/');
   } catch (error) {
     return false;
   }
